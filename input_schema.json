@@ -1,0 +1,23 @@
+{
+    "title": "Amazon Books Scraper",
+    "type": "object",
+    "schemaVersion": 1,
+    "properties": {
+        "startUrl": {
+            "title": "Start URL",
+            "type": "string",
+            "description": "URL of the Amazon category page to scrape",
+            "editor": "textfield",
+            "default": "https://www.amazon.com/s?i=stripbooks&rh=n%3A283155"
+        },
+        "maxPages": {
+            "title": "Maximum Pages",
+            "type": "integer",
+            "description": "Maximum number of pages to scrape",
+            "editor": "number",
+            "default": 2,
+            "minimum": 1
+        }
+    },
+    "required": ["startUrl"]
+}

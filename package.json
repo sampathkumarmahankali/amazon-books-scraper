@@ -1,0 +1,13 @@
+{
+    "name": "amazon-books-scraper",
+    "version": "0.1.0",
+    "description": "Scrapes product details from Amazon's Books category",
+    "dependencies": {
+        "apify": "^3.0.0",
+        "playwright": "^1.30.0"
+    },
+    "scripts": {
+        "start": "node main.js",
+        "test": "echo \"Error: no test specified\" && exit 1"
+    }
+}
