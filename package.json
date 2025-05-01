@@ -1,26 +1,13 @@
 {
     "name": "amazon-books-scraper",
     "version": "1.0.0",
-    "description": "Scrapes product details from Amazon's Books category using Playwright",
-    "main": "main.js",
-    "scripts": {
-      "start": "node main.js",
-      "dev": "APIFY_STORAGE_DIR=./apify_storage node main.js",
-      "lint": "eslint .",
-      "test": "echo \"Error: no tests specified\" && exit 1"
-    },
     "dependencies": {
-      "apify": "^3.6.2",
+      "apify": "^3.7.0",
       "playwright": "^1.42.1",
-      "dotenv": "^16.3.1",
-      "@apify/storage-local": "^2.1.0"
+      "@apify/storage-local": "^3.0.0"
     },
-    "devDependencies": {
-      "eslint": "^8.56.0",
-      "eslint-config-airbnb-base": "^15.0.0",
-      "eslint-plugin-import": "^2.29.1"
+    "scripts": {
+      "start": "node main.js"
     },
-    "engines": {
-      "node": ">=20.0.0"
-    }
+    "type": "module"
   }
