@@ -1,12 +1,10 @@
 {
     "actorSpecification": 1,
     "name": "amazon-books-scraper",
-    "title": "Amazon Books Scraper",
-    "description": "Scrapes product details from Amazon Books category",
     "version": "0.1",
-    "dockerfile": "./Dockerfile",
-    "input": "./input_schema.json",
+    "input": "./.actor/input_schema.json",
+    // Remove the "storages" section completely or change to:
     "storages": {
-        "dataset": "./output"
+        "dataset": { "type": "memory" }  // Uses in-memory storage instead
     }
 }
