@@ -5,7 +5,7 @@
     "description": "Scrapes product details from Amazon Books category",
     "version": "0.1",
     "dockerfile": "./Dockerfile",
-    "input": "./.actor/input_schema.json",
+    "input": "./input_schema.json",
     "storages": {
         "dataset": "./output"
     }
