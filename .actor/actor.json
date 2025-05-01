@@ -1,6 +1,15 @@
 {
     "actorSpecification": 1,
     "name": "amazon-books-scraper",
-    "input": "./input_schema.json",  // Changed path
-    // ... rest of config
+    "title": "Amazon Books Scraper",
+    "description": "Scrapes product details from Amazon's Books category",
+    "version": "0.1",  // REQUIRED FIELD ADDED
+    "dockerfile": "./Dockerfile",
+    "input": "./input_schema.json",
+    "storages": {
+        "dataset": "./output"
+    },
+    "build": {
+        "image": "apify/actor-node-playwright:latest"
+    }
 }
