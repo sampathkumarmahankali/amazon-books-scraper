@@ -1,10 +1,11 @@
 {
     "actorSpecification": 1,
     "name": "amazon-books-scraper",
+    "title": "Amazon Books Scraper",
+    "description": "Scrapes product details from Amazon's Books category",
     "version": "0.1",
-    "input": "./.actor/input_schema.json",
-    // Remove the "storages" section completely or change to:
-    "storages": {
-        "dataset": { "type": "memory" }  // Uses in-memory storage instead
+    "input": "./input_schema.json",
+    "build": {
+        "image": "apify/actor-node-playwright:latest"
     }
 }
