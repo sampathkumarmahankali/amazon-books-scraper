@@ -3,14 +3,11 @@ FROM apify/actor-node-playwright:20
 # Windows-compatible setup
 WORKDIR /usr/src/app
 
-# Reset permissions (Windows workaround)
-RUN chmod 777 /usr/src/app
-
-# Copy only package.json first
+# Copy only package.json first (Windows-safe)
 COPY package.json .
 
-# Clean install without lockfile
-RUN npm install --omit=dev --package-lock=false
+# Install dependencies without lockfile
+RUN npm install --omit=dev --no-package-lock --no-audit --no-fund
 
 # Copy remaining files
 COPY . .
