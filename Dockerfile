@@ -1,17 +1,16 @@
-FROM apify/actor-node-playwright:18
+FROM apify/actor-node-playwright:20
 
-# Create non-root user
-RUN useradd -m appuser
+# Skip user creation (Windows workaround)
 WORKDIR /usr/src/app
 
-# Copy files with proper ownership
-COPY --chown=appuser:appuser package*.json ./
+# Copy files
+COPY package.json .
+COPY package-lock.json .
 
-# Install dependencies as non-root
-USER appuser
-RUN npm install --omit=dev --no-warnings
+# Install dependencies
+RUN npm install --omit=dev
 
-# Copy remaining files
-COPY --chown=appuser:appuser . .
+# Copy app files
+COPY . .
 
 CMD ["npm", "start"]
