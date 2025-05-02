@@ -7,6 +7,8 @@ WORKDIR /usr/src/app
 # Copy package.json and package-lock.json (if available)
 COPY package*.json ./
 
+RUN npx playwright install --with-deps chromium
+
 # Install dependencies
 RUN npm install --only=production
 
