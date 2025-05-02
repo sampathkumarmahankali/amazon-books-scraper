@@ -1,20 +1,43 @@
-# Use an Apify base image, which comes with Node.js and other tools pre-installed
-FROM apify/actor-node:latest
+# Use official Apify image with Node.js 20
+FROM apify/actor-node:20
 
-# Define a working directory
+# Set working directory
 WORKDIR /usr/src/app
 
-# Copy package.json and package-lock.json (if available)
-COPY package*.json ./
+# Install system dependencies for Playwright
+RUN apt-get update && \
+    apt-get install -y \
+    libnss3 \
+    libnspr4 \
+    libatk1.0-0 \
+    libatk-bridge2.0-0 \
+    libcups2 \
+    libdrm2 \
+    libxkbcommon0 \
+    libxcomposite1 \
+    libxdamage1 \
+    libxfixes3 \
+    libxrandr2 \
+    libgbm1 \
+    libasound2 \
+    && rm -rf /var/lib/apt/lists/*
 
-RUN npx playwright install --with-deps chromium
+# Install Playwright and browsers
+RUN npm install playwright@1.42.1 && \
+    npx playwright install --with-deps chromium
 
-# Install dependencies
-RUN npm install --only=production
+# Copy package files first for better caching
+COPY package.json package-lock.json ./
 
-# Copy the rest of the actor's source code
-COPY . ./
+# Install Node.js dependencies
+RUN npm install --omit=dev
 
-# Optional: Specify the command to run when the actor starts
-# If not specified, Apify's base image provides a default CMD instruction
-# CMD ["node", "main.js"]
+# Copy all source files
+COPY . .
+
+# Set up non-root user for security
+RUN chown -R node:node /usr/src/app
+USER node
+
+# Run the application
+CMD ["npm", "start"]
