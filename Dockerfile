@@ -1,16 +1,18 @@
 FROM apify/actor-node-playwright:20
 
-# Skip user creation (Windows workaround)
+# Windows-compatible setup
 WORKDIR /usr/src/app
 
-# Copy files
+# Reset permissions (Windows workaround)
+RUN chmod 777 /usr/src/app
+
+# Copy only package.json first
 COPY package.json .
-COPY package-lock.json .
 
-# Install dependencies
-RUN npm install --omit=dev
+# Clean install without lockfile
+RUN npm install --omit=dev --package-lock=false
 
-# Copy app files
+# Copy remaining files
 COPY . .
 
 CMD ["npm", "start"]
