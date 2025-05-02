@@ -1,58 +1,65 @@
-const { Actor } = require('apify');
+import { Apify } from 'apify';
+import { Cheerio } from 'cheerio';
 
-Actor.main(async () => {
-    // Get input configuration
-    const input = await Actor.getInput() || {};
-    const { startUrl = 'https://www.amazon.com/s?i=stripbooks&rh=n%3A283155', maxPages = 2 } = input;
+Apify.init(); // Initialize the Apify environment
 
-    // Set up Playwright
-    const browser = await Actor.launchPlaywright();
-    const context = await browser.newContext();
-    const page = await context.newPage();
+const {
+  input,
+  startUrls,
+  maxItemsToScrape,
+  countryCode
+} = Apify.getInput(); // Get input parameters (e.g., Amazon URL, max items)
 
-    // Create request queue
-    const requestQueue = await Actor.openRequestQueue();
-    await requestQueue.addRequest({ url: startUrl, userData: { pageNumber: 1 } });
+const scraper = new Apify.Scraper({
+  startUrls: startUrls, // Initial URLs to scrape
+  maxItemsToScrape: maxItemsToScrape, // Limit the number of items to scrape
+  input: input, // Any other input you might need
 
-    // Create dataset for output
-    const dataset = await Actor.openDataset();
+  async crawl(context) {
+    console.log(`Crawling: ${context.request.url}`);
 
-    const crawler = new Actor.PlaywrightCrawler({
-        requestQueue,
-        async requestHandler({ request, page }) {
-            const { pageNumber } = request.userData;
-            
-            // Scraping logic
-            await page.waitForSelector('.s-result-item');
-            const products = await page.$$eval('.s-result-item', (items) => {
-                return items.map(item => ({
-                    name: item.querySelector('h2 a span')?.textContent.trim() || 'N/A',
-                    price: `${item.querySelector('.a-price-whole')?.textContent.trim() || '0'}.${item.querySelector('.a-price-fraction')?.textContent.trim() || '00'}`,
-                    rating: item.querySelector('.a-icon-alt')?.textContent.trim().split(' ')[0] || 'N/A'
-                }));
-            });
+    const $ = await context.getPage();
+    const bookData = [];
 
-            // Save results
-            await dataset.pushData({
-                pageNumber,
-                url: request.url,
-                products,
-                timestamp: new Date().toISOString()
-            });
+    // Example: Extract title and price (you'll need to adjust selectors)
+    const titles = $('.a-link-title').map((index, element) => {
+      return $(element).text();
+    }).toArray();
+    const prices = $('.a-price-whole').map((index, element) => {
+      return $(element).text();
+    }).toArray();
+    const links = $('.a-link-title').map((index, element) => {
+      return $(element).attr('href');
+    }).toArray();
 
-            // Pagination
-            if (pageNumber < maxPages) {
-                const nextPage = await page.$('.s-pagination-next:not(.s-pagination-disabled)');
-                if (nextPage) {
-                    await requestQueue.addRequest({
-                        url: await nextPage.getAttribute('href'),
-                        userData: { pageNumber: pageNumber + 1 }
-                    });
-                }
-            }
-        },
-    });
+    for (let i = 0; i < titles.length; i++) {
+      bookData.push({
+        title: titles[i],
+        price: prices[i],
+        link: links[i]
+      });
+    }
 
-    await crawler.run();
-    await browser.close();
+    return {
+      url: context.request.url,
+      data: bookData
+    };
+  },
+
+  async afterPageLoad(context) {
+    // Implement logic for navigating to the next page, if needed
+  },
 });
+
+try {
+  const { data } = await scraper.run();
+
+  console.log('Scraped data:', data);
+
+  // Save the data to a dataset
+  Apify.Dataset.push(data);
+} catch (e) {
+  console.log(e);
+} finally {
+  Apify.done(); // Signal that the scraping process is complete
+}
