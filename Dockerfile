@@ -1,21 +1,18 @@
-FROM apify/actor-node-playwright:20
+# Use an Apify base image, which comes with Node.js and other tools pre-installed
+FROM apify/actor-node:latest
 
-# Set working directory
+# Define a working directory
 WORKDIR /usr/src/app
 
-# Copy package files first
-COPY package.json .
+# Copy package.json and package-lock.json (if available)
+COPY package*.json ./
 
-# Install dependencies as root (temporary)
-RUN npm install --omit=dev --no-package-lock --no-audit --no-fund
+# Install dependencies
+RUN npm install --only=production
 
-# Fix permissions (Windows-safe method)
-RUN chmod -R 777 /usr/src/app/node_modules
+# Copy the rest of the actor's source code
+COPY . ./
 
-# Copy application files
-COPY . .
-
-# Switch to non-root user (1001 is standard non-root user in Apify images)
-USER 1001
-
-CMD ["npm", "start"]
+# Optional: Specify the command to run when the actor starts
+# If not specified, Apify's base image provides a default CMD instruction
+# CMD ["node", "main.js"]
