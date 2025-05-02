@@ -1,30 +1,18 @@
-# Use official Apify image with Node.js 20
-FROM apify/actor-node:20
+# Use official Apify image with Node.js 20 and Playwright pre-installed
+FROM apify/actor-node-playwright:20
 
 # Set working directory
 WORKDIR /usr/src/app
 
-# Install system dependencies for Playwright
-RUN apt-get update && \
-    apt-get install -y \
-    libnss3 \
-    libnspr4 \
-    libatk1.0-0 \
-    libatk-bridge2.0-0 \
-    libcups2 \
-    libdrm2 \
-    libxkbcommon0 \
-    libxcomposite1 \
-    libxdamage1 \
-    libxfixes3 \
-    libxrandr2 \
-    libgbm1 \
-    libasound2 \
-    && rm -rf /var/lib/apt/lists/*
-
-# Install Playwright and browsers
-RUN npm install playwright@1.42.1 && \
-    npx playwright install --with-deps chromium
+# Install any additional required dependencies (Alpine Linux packages)
+RUN apk add --no-cache \
+    libstdc++ \
+    chromium \
+    nss \
+    freetype \
+    harfbuzz \
+    ca-certificates \
+    ttf-freefont
 
 # Copy package files first for better caching
 COPY package.json package-lock.json ./
