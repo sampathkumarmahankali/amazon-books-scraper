@@ -1,17 +1,17 @@
-# Use Apify's pre-configured Node.js + Playwright image
-FROM apify/actor-node-playwright:20
+FROM apify/actor-node-playwright:18
 
-# Set working directory inside container
+# Create non-root user
+RUN useradd -m appuser
 WORKDIR /usr/src/app
 
-# First copy package files to cache dependencies
-COPY package.json package-lock.json ./
+# Copy files with proper ownership
+COPY --chown=appuser:appuser package*.json ./
 
-# Install dependencies (production only)
+# Install dependencies as non-root
+USER appuser
 RUN npm install --production
 
-# Copy all source files
-COPY . ./
+# Copy remaining files
+COPY --chown=appuser:appuser . .
 
-# Run the actor
 CMD ["npm", "start"]
