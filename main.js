@@ -1,47 +1,36 @@
-const { Actor } = require('apify');
-const { PlaywrightCrawler } = require('crawlee');
+import { Actor } from 'apify';
+import { chromium } from 'playwright';
 
-Actor.main(async () => {
-    const input = await Actor.getInput() || {};
-    const startUrl = input.startUrl || 'https://www.amazon.com/s?i=stripbooks&rh=n%3A283155';
-    const maxPages = input.maxPages || 2;
+await Actor.init();
 
-    const dataset = await Actor.openDataset();
+const { startUrls } = await Actor.getInput();
 
-    const crawler = new PlaywrightCrawler({
-        requestHandler: async ({ page, request }) => {
-            const { pageNumber = 1 } = request.userData;
+const browser = await chromium.launch({ headless: false });
+const page = await browser.newPage();
 
-            await page.waitForSelector('.s-result-item');
-            const products = await page.$$eval('.s-result-item', (items) => {
-                return items.map(item => ({
-                    name: item.querySelector('h2 a span')?.textContent.trim() || 'N/A',
-                    price: `${item.querySelector('.a-price-whole')?.textContent.trim() || '0'}.${item.querySelector('.a-price-fraction')?.textContent.trim() || '00'}`,
-                    rating: item.querySelector('.a-icon-alt')?.textContent.trim().split(' ')[0] || 'N/A'
-                }));
-            });
+const results = [];
 
-            await dataset.pushData({
-                pageNumber,
-                url: request.url,
-                products,
-                scrapedAt: new Date().toISOString()
-            });
+for (const url of startUrls) {
+    await page.goto(url);
 
-            if (pageNumber < maxPages) {
-                const nextUrl = await page.$eval('a.s-pagination-next:not(.s-pagination-disabled)', el => el.href);
-                if (nextUrl) {
-                    await crawler.addRequests([{
-                        url: nextUrl,
-                        userData: { pageNumber: pageNumber + 1 }
-                    }]);
-                }
-            }
-        },
+    const bookData = await page.evaluate(() => {
+        const title = document.querySelector('#productTitle')?.textContent.trim();
+        const author = document.querySelector('.author a')?.textContent.trim();
+        const price = document.querySelector('.price_color')?.textContent.trim();
+        const rating = document.querySelector('i[data-hook="rating-star-small"]')?.getAttribute('class').match(/a-star-([0-5]-)/)?.[1];
+
+        return {
+            title,
+            author,
+            price,
+            rating
+        };
     });
+    results.push(bookData);
+}
 
-    await crawler.run([{ 
-        url: startUrl,
-        userData: { pageNumber: 1 }
-    }]);
-});
+await browser.close();
+
+await Actor.pushData(results);
+
+await Actor.exit();
