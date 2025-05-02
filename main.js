@@ -1,65 +1,65 @@
-import { Apify } from 'apify';
-import { Cheerio } from 'cheerio';
+const { Actor, PlaywrightCrawler } = require('apify');
 
-Apify.init(); // Initialize the Apify environment
+Actor.main(async () => {
+    // Get input (default to Amazon books category)
+    const input = await Actor.getInput() || {};
+    const startUrl = input.startUrl || 'https://www.amazon.com/s?i=stripbooks&rh=n%3A283155';
+    const maxPages = input.maxPages || 2;
 
-const {
-  input,
-  startUrls,
-  maxItemsToScrape,
-  countryCode
-} = Apify.getInput(); // Get input parameters (e.g., Amazon URL, max items)
+    // Initialize dataset for results
+    const dataset = await Actor.openDataset();
 
-const scraper = new Apify.Scraper({
-  startUrls: startUrls, // Initial URLs to scrape
-  maxItemsToScrape: maxItemsToScrape, // Limit the number of items to scrape
-  input: input, // Any other input you might need
+    // Configure crawler
+    const crawler = new PlaywrightCrawler({
+        launchContext: {
+            launchOptions: {
+                headless: true,
+            },
+        },
+        requestHandler: async ({ page, request }) => {
+            const { pageNumber = 1 } = request.userData;
 
-  async crawl(context) {
-    console.log(`Crawling: ${context.request.url}`);
+            // Wait for and scrape products
+            await page.waitForSelector('.s-result-item');
+            const products = await page.$$eval('.s-result-item', (items) => {
+                return items.map(item => {
+                    const name = item.querySelector('h2 a span')?.textContent.trim() || 'N/A';
+                    const priceWhole = item.querySelector('.a-price-whole')?.textContent.trim() || '0';
+                    const priceFraction = item.querySelector('.a-price-fraction')?.textContent.trim() || '00';
+                    const rating = item.querySelector('.a-icon-alt')?.textContent.trim().split(' ')[0] || 'N/A';
 
-    const $ = await context.getPage();
-    const bookData = [];
+                    return {
+                        name,
+                        price: `$${priceWhole}.${priceFraction}`,
+                        rating
+                    };
+                });
+            });
 
-    // Example: Extract title and price (you'll need to adjust selectors)
-    const titles = $('.a-link-title').map((index, element) => {
-      return $(element).text();
-    }).toArray();
-    const prices = $('.a-price-whole').map((index, element) => {
-      return $(element).text();
-    }).toArray();
-    const links = $('.a-link-title').map((index, element) => {
-      return $(element).attr('href');
-    }).toArray();
+            // Save results
+            await dataset.pushData({
+                pageNumber,
+                url: request.url,
+                products,
+                scrapedAt: new Date().toISOString()
+            });
 
-    for (let i = 0; i < titles.length; i++) {
-      bookData.push({
-        title: titles[i],
-        price: prices[i],
-        link: links[i]
-      });
-    }
+            // Pagination
+            if (pageNumber < maxPages) {
+                const nextButton = await page.$('a.s-pagination-next:not(.s-pagination-disabled)');
+                if (nextButton) {
+                    await crawler.addRequests([{
+                        url: await nextButton.getAttribute('href'),
+                        userData: { pageNumber: pageNumber + 1 }
+                    }]);
+                }
+            }
+        },
+    });
 
-    return {
-      url: context.request.url,
-      data: bookData
-    };
-  },
-
-  async afterPageLoad(context) {
-    // Implement logic for navigating to the next page, if needed
-  },
+    // Start crawling
+    await crawler.run([{
+        url: startUrl,
+        userData: { pageNumber: 1 }
+    }]);
 });
-
-try {
-  const { data } = await scraper.run();
-
-  console.log('Scraped data:', data);
-
-  // Save the data to a dataset
-  Apify.Dataset.push(data);
-} catch (e) {
-  console.log(e);
-} finally {
-  Apify.done(); // Signal that the scraping process is complete
-}
