@@ -9,7 +9,7 @@ COPY --chown=appuser:appuser package*.json ./
 
 # Install dependencies as non-root
 USER appuser
-RUN npm install --production
+RUN npm install --omit=dev --no-warnings
 
 # Copy remaining files
 COPY --chown=appuser:appuser . .
